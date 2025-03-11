@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurozip"
+version = "0.0.1"
+description = "Dimensionality Reduction for Brain Imaging Data"
+authors = [
+  {name = "Daniel Ramandi", email="ramandi18@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+]
+
+
+[tool.black]
+line-length = 79
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "tests.py", "test.py"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+
+[project.optional-dependencies]
+dev = [
+  "black==24.10.0", 
+  "flake8==7.1.1", 
+  "flake8-import-order==0.18.2", 
+  "twine==5.1.1"
+]
+
+test = [
+  "black==24.10.0", 
+  "flake8==7.1.1", 
+  "flake8-import-order==0.18.2"
+]
