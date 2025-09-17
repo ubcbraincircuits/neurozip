@@ -289,6 +289,147 @@ class Rescale(_BaseTransformer):
         return self.transform(X)
 
 
+# ----------- Trim ----------
+class Trim(_BaseTransformer):
+    """
+    Trim frames from start and/or end: (T,H,W) -> (T-trim_start-trim_end,H,W)
+    """
+    def __init__(self, trim_start: int = 0, trim_end: int = 0):
+        self.trim_start = int(trim_start)
+        self.trim_end = int(trim_end)
+        if self.trim_start < 0 or self.trim_end < 0:
+            raise ValueError("Trim values must be non-negative.")
+
+    def fit(self, X: NzLoad) -> "Trim":
+        # nothing to learn; but validate
+        _ = _as_3d(X.data)
+        return self
+
+    def transform(self, X: NzLoad) -> NzLoad:
+        arr = _as_3d(X.data)
+        T = arr.shape[0]
+        start = self.trim_start
+        end = T - self.trim_end if self.trim_end > 0 else T
+        if start >= end:
+            raise ValueError(
+                f"Trim values too large for data with {T} frames.")
+        out = arr[start:end]
+        return type(X)(data=out, parameters=X.parameters)
+
+    def fit_transform(self, X: NzLoad) -> NzLoad:
+        self.fit(X)
+        return self.transform(X)
+
+
+# ----------- Temporal Filter ----------
+class TemporalFilter(_BaseTransformer):
+    """
+    Simple temporal filtering: 'lowpass', 'highpass', or 'bandpass',
+    using a butterworth filter.
+    """
+    def __init__(self, *,
+                 filter_type: Literal[
+                     "lowpass", "highpass", "bandpass"] = "bandpass",
+                 lowcut: Optional[float] = 0.01,
+                 highcut: Optional[float] = 10.0,
+                 fs: float = 30.0,
+                 order: int = 5):
+        self.filter_type = filter_type
+        self.lowcut = lowcut
+        self.highcut = highcut
+        self.fs = fs
+        self.order = order
+        # fitted artifacts
+        self._b: Optional[np.ndarray] = None
+        self._a: Optional[np.ndarray] = None
+        self._zi: Optional[np.ndarray] = None
+
+    def fit(self, X: NzLoad) -> "TemporalFilter":
+        from scipy.signal import butter, lfilter_zi
+        if not isinstance(X, NzImageLoad):
+            warnings.warn(f"TemporalFilter is optimized for NzImageLoad; got"
+                          f"{type(X).__name__}.", stacklevel=2)
+        arr = _as_3d(X.data)
+        nyq = 0.5 * self.fs
+        if self.filter_type == "lowpass":
+            if self.highcut is None:
+                raise ValueError(
+                    "highcut must be specified for lowpass filter.")
+            normal_cutoff = self.highcut / nyq
+            self._b, self._a = butter(
+                self.order, normal_cutoff, btype='low', analog=False)
+        elif self.filter_type == "highpass":
+            if self.lowcut is None:
+                raise ValueError(
+                    "lowcut must be specified for highpass filter.")
+            normal_cutoff = self.lowcut / nyq
+            self._b, self._a = butter(
+                self.order, normal_cutoff, btype='high', analog=False)
+        elif self.filter_type == "bandpass":
+            if self.lowcut is None or self.highcut is None:
+                raise ValueError(
+                    "Both lowcut and highcut must be specified"
+                    "for bandpass filter.")
+            low = self.lowcut / nyq
+            high = self.highcut / nyq
+            self._b, self._a = butter(
+                self.order, [low, high], btype='band', analog=False)
+        else:
+            raise ValueError(
+                "filter_type must be 'lowpass', 'highpass', or 'bandpass'.")
+        # Initialize zi for each pixel
+        T, H, W = arr.shape
+        self._zi = np.array([lfilter_zi(self._b, self._a) * arr[0, h, w]
+                             for h in range(H) for w in range(W)])
+        self._zi = self._zi.reshape(H, W, -1)  # shape (H,W,len(a)-1)
+        return self
+
+    def transform(self, X: NzLoad) -> NzLoad:
+        from scipy.signal import lfilter
+        if self._b is None or self._a is None or self._zi is None:
+            raise RuntimeError(
+                "TemporalFilter must be fitted before transform.")
+        arr = _as_3d(X.data)
+        T, H, W = arr.shape
+        out = np.zeros_like(arr, dtype=np.float32)
+        for h in range(H):
+            for w in range(W):
+                out[:, h, w], self._zi[h, w] = lfilter(
+                    self._b, self._a, arr[:, h, w],
+                    zi=self._zi[h, w])
+        return type(X)(data=out, parameters=X.parameters)
+
+    def fit_transform(self, X: NzLoad) -> NzLoad:
+        self.fit(X)
+        return self.transform(X)
+
+
+# ----------- Spatial Filter ----------
+class SpatialFilter(_BaseTransformer):
+    """
+    Simple gaussian spatial filtering with given sigma (in pixels).
+    """
+    def __init__(self, sigma: float = 1.0):
+        self.sigma = float(sigma)
+
+    def fit(self, X: NzLoad) -> "SpatialFilter":
+        # nothing to learn; but validate
+        _ = _as_3d(X.data)
+        return self
+
+    def transform(self, X: NzLoad) -> NzLoad:
+        from scipy.ndimage import gaussian_filter
+        arr = _as_3d(X.data)
+        out = np.zeros_like(arr, dtype=np.float32)
+        for t in range(arr.shape[0]):
+            out[t] = gaussian_filter(arr[t], sigma=self.sigma)
+        return type(X)(data=out, parameters=X.parameters)
+
+    def fit_transform(self, X: NzLoad) -> NzLoad:
+        self.fit(X)
+        return self.transform(X)
+
+
 # ---------- Threshold ----------
 class Threshold(_BaseTransformer):
     """
