@@ -12,7 +12,7 @@ _REGISTRY: Dict[str, Tuple[Reader, Container]] = {
     "widefield": (read_tif_array, NzImageLoad),
     "tif": (read_tif_array, NzImageLoad),
     "tiff": (read_tif_array, NzImageLoad),
-    "ndarray": (as_ndarray, NzLoad),   # or something else?
+    "ndarray": (as_ndarray, NzLoad),  # or something else?
 }
 
 
@@ -39,7 +39,7 @@ def dispatch_load(
     *,
     kind: Optional[str] = None,
     parameters: Optional[Parameters] = None,
-    **kwargs
+    **kwargs,
 ) -> NzLoad:
     # Case 1: kind is unspecified
     if kind is None:
