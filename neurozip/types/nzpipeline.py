@@ -10,5 +10,6 @@ class NzPipeline:
         pipeline = NzPipeline([step1, step2])
         processed = pipeline.run(data)
     """
+
     def __init__(self, steps):
         self.steps = steps

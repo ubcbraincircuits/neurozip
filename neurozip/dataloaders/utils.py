@@ -22,6 +22,7 @@ def read_tif(filepath: str, *, parameters: Parameters | None = None) -> NzLoad:
         return read_ndarray(data, parameters=parameters)
 
 
-def read_ndarray(data: np.ndarray, *,
-                 parameters: Parameters | None = None) -> NzLoad:
+def read_ndarray(
+    data: np.ndarray, *, parameters: Parameters | None = None
+) -> NzLoad:
     return NzLoad(data=data, parameters=parameters)

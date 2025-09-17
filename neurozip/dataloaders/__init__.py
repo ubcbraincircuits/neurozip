@@ -7,7 +7,7 @@ from neurozip.types.nzloader import NzLoad, Parameters
 # Loader signature: (payload, *, parameters=None, **kwargs) -> NzLoad
 _LOADERS: Dict[str, Callable[..., NzLoad]] = {
     "widefield": read_tif,
-    "tiff": read_tif,      # aliases are handy
+    "tiff": read_tif,  # aliases are handy
     "tif": read_tif,
     "ndarray": read_ndarray,  # more to be added later
 }
@@ -38,7 +38,7 @@ def dispatch_load(
     *,
     kind: Optional[str] = None,
     parameters: Optional[Parameters] = None,
-    **kwargs
+    **kwargs,
 ) -> NzLoad:
     """
     Internal dispatcher used by nz.load().
@@ -60,7 +60,8 @@ def dispatch_load(
             kind = "ndarray"
         else:
             raise TypeError(
-                "payload must be a file path (str) or a NumPy ndarray.")
+                "payload must be a file path (str) or a NumPy ndarray."
+            )
 
     loader = get_loader(kind)
     return loader(payload, parameters=parameters, **kwargs)

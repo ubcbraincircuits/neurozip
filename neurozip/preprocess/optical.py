@@ -1,6 +1,4 @@
-
-
-""" Preprocessing functions for optical data. Example:
+"""Preprocessing functions for optical data. Example:
 from neurozip.types.nzloader import NzLoad
 import aspis.common as A
 

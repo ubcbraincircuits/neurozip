@@ -9,5 +9,6 @@ class NzPreprocessor:
                 # custom logic
                 return data
     """
+
     def __init__(self):
         pass
