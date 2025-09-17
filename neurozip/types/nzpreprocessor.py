@@ -1,14 +1,30 @@
-class NzPreprocessor:
-    """
-    Base class for data preprocessing steps in neurozip.
-    Extend this class to implement custom preprocessing logic.
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+import numpy as np
+from .nzloader import NzLoad, Parameters
 
-    Example:
-        class MyPreprocessor(NzPreprocessor):
-            def process(self, data):
-                # custom logic
-                return data
-    """
 
-    def __init__(self):
-        pass
+@dataclass(slots=True)
+class HistoryItem:
+    name: str
+    params: Dict[str, Any]
+
+
+class NzPreprocessed(NzLoad):
+    """Generic post-preprocessing container."""
+    def __init__(self, data: np.ndarray, *,
+                 parameters: Optional[Parameters] = None,
+                 history: Optional[List[HistoryItem]] = None):
+        super().__init__(data=data, parameters=parameters)
+        self.history: List[HistoryItem] = history or []
+
+
+class NzImagePreprocessed(NzPreprocessed):
+    """Preprocessed widefield/imaging data."""
+    pass
+
+
+class NzEphysPreprocessed(NzPreprocessed):
+    """Preprocessed Ephys/NP data."""
+    pass

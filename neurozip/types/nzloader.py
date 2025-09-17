@@ -8,6 +8,7 @@ import difflib
 class Parameters:
     rate: Optional[float] = None
     events: Optional[np.ndarray] = None
+    history: Optional[list] = None
     # add more later as needed
 
 
