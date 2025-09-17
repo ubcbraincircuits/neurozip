@@ -3,7 +3,8 @@ from PIL import Image
 from neurozip.types.nzloader import NzLoad, Parameters
 
 
-def read_tif(filepath: str, *, parameters: Parameters | None = None) -> NzLoad:
+def read_tif_array(filepath: str, *,
+                   parameters: Parameters | None = None) -> NzLoad:
     """
     Properly load a multi-page TIFF stack using Pillow (PIL).
     Returns NzLoad with data shaped (frames, H, W).
@@ -17,9 +18,12 @@ def read_tif(filepath: str, *, parameters: Parameters | None = None) -> NzLoad:
                 img.seek(img.tell() + 1)
         except EOFError:
             pass  # End of file reached
-        data = np.stack(frames, axis=0)
         # Stack all frames into a 3D array
-        return read_ndarray(data, parameters=parameters)
+        return np.stack(frames, axis=0)
+
+
+def as_ndarray(data: np.ndarray) -> np.ndarray:
+    return data
 
 
 def read_ndarray(

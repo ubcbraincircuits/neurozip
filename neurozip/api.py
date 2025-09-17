@@ -9,7 +9,7 @@ def load(
     *,
     kind: Optional[str] = None,
     parameters: Optional[Parameters] = None,
-    **kwargs,
+    **kwargs
 ) -> NzLoad:
     """
     Public loader: nz.load(...)

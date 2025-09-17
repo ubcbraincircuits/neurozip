@@ -1,36 +1,37 @@
-from typing import Callable, Dict, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, Optional, Union, Type, Tuple
 import numpy as np
-from .utils import read_tif, read_ndarray  # add more functions later
-from neurozip.types.nzloader import NzLoad, Parameters
+from .utils import read_tif_array, as_ndarray  # add more as needed
+from neurozip.types.nzloader import NzLoad, NzImageLoad, NzNPLoad, Parameters
+
+Reader = Callable[[Union[str, np.ndarray]], np.ndarray]
+Container = Type[NzLoad]
 
 # Map kind -> callable
 # Loader signature: (payload, *, parameters=None, **kwargs) -> NzLoad
-_LOADERS: Dict[str, Callable[..., NzLoad]] = {
-    "widefield": read_tif,
-    "tiff": read_tif,  # aliases are handy
-    "tif": read_tif,
-    "ndarray": read_ndarray,  # more to be added later
+_REGISTRY: Dict[str, Tuple[Reader, Container]] = {
+    "widefield": (read_tif_array, NzImageLoad),
+    "tif": (read_tif_array, NzImageLoad),
+    "tiff": (read_tif_array, NzImageLoad),
+    "ndarray": (as_ndarray, NzLoad),   # or something else?
 }
 
 
-def register_loader(kind: str, fn: Callable[..., NzLoad]) -> None:
-    """Allow extensions to register new loaders later."""
-    kind = kind.lower()
-    if kind in _LOADERS:
-        raise ValueError(f"Loader for kind '{kind}' already exists.")
-    _LOADERS[kind] = fn
-
-
-def get_loader(kind: str) -> Callable[..., NzLoad]:
-    try:
-        return _LOADERS[kind.lower()]
-    except KeyError:
-        available = ", ".join(sorted(_LOADERS))
-        raise ValueError(f"Unknown kind='{kind}'. Available: {available}")
+def register_loader(kind: str, reader: Reader, container: Container) -> None:
+    k = kind.lower()
+    if k in _REGISTRY:
+        raise ValueError(f"Loader for kind '{k}' already exists.")
+    _REGISTRY[k] = (reader, container)
 
 
 def list_kinds() -> Iterable[str]:
-    return _LOADERS.keys()
+    return _REGISTRY.keys()
+
+
+def _infer_kind_from_path(path: str) -> Optional[str]:
+    low = path.lower()
+    if low.endswith((".tif", ".tiff")):  # This should be extended
+        return "widefield"
+    return None
 
 
 def dispatch_load(
@@ -38,30 +39,41 @@ def dispatch_load(
     *,
     kind: Optional[str] = None,
     parameters: Optional[Parameters] = None,
-    **kwargs,
+    **kwargs
 ) -> NzLoad:
-    """
-    Internal dispatcher used by nz.load().
-    - If kind is provided, use it.
-    - If kind is None and payload is a str path, infer from extension.
-    - If kind is None and payload is an ndarray, assume 'ndarray'.
-    """
+    # Case 1: kind is unspecified
     if kind is None:
         if isinstance(payload, str):
+            # infer from path when possible
             low = payload.lower()
             if low.endswith((".tif", ".tiff")):
                 kind = "widefield"
             else:
                 raise ValueError(
                     "Could not infer loader kind from path. "
-                    "Pass `kind=...` explicitly (e.g., 'widefield')."
+                    "Pass `kind=...` explicitly"
+                    "(e.g., 'widefield', 'ndarray')."
                 )
         elif isinstance(payload, np.ndarray):
-            kind = "ndarray"
+            # Array + no kind → plain NzLoad
+            return NzLoad(data=payload, parameters=parameters)
         else:
             raise TypeError(
                 "payload must be a file path (str) or a NumPy ndarray."
             )
 
-    loader = get_loader(kind)
-    return loader(payload, parameters=parameters, **kwargs)
+    # Case 2: kind is specified (or inferred above)
+    try:
+        reader, container = _REGISTRY[kind.lower()]
+    except KeyError:
+        available = ", ".join(sorted(_REGISTRY))
+        raise ValueError(f"Unknown kind='{kind}'. Available: {available}")
+
+    # Readers always return an ndarray
+    # For arrays this is identity via `as_ndarray`
+    if isinstance(payload, np.ndarray):
+        # Directly use the array
+        arr = payload
+        return container(data=arr, parameters=parameters)
+    arr = reader(payload, **kwargs)
+    return container(data=arr, parameters=parameters)
