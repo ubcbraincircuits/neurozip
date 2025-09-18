@@ -17,27 +17,29 @@ from .nzpreprocessor import NzPreprocessed, NzImagePreprocessed, HistoryItem
 @runtime_checkable
 class Transformer(Protocol):
     """Minimal sklearn-like API."""
-    def fit(self, X: NzLoad) -> "Transformer":
-        ...
 
-    def transform(self, X: NzLoad) -> NzLoad:
-        ...
+    def fit(self, X: NzLoad) -> "Transformer": ...
+
+    def transform(self, X: NzLoad) -> NzLoad: ...
 
     def fit_transform(self, X: NzLoad) -> NzLoad:
         self.fit(X)
         return self.transform(X)
 
-    def get_params(self) -> Dict[str, Any]:
-        ...
+    def get_params(self) -> Dict[str, Any]: ...
 
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
 
 class Pipeline:
     """Ordered composition of transformers (preprocessing)."""
-    def __init__(self, steps: Iterable[Transformer], *,
-                 expect: Optional[Type[NzLoad]] = None):
+
+    def __init__(
+        self,
+        steps: Iterable[Transformer],
+        *,
+        expect: Optional[Type[NzLoad]] = None,
+    ):
         self.steps: List[Transformer] = list(steps)
         self.expect = expect  # optional input type guard
 
@@ -67,12 +69,12 @@ class Pipeline:
             history.append(HistoryItem(name=t.name(), params=t.get_params()))
         # choose preprocessed container class by input kind
         if isinstance(cur, NzImageLoad):
-            return NzImagePreprocessed(cur.data,
-                                       parameters=cur.parameters,
-                                       history=history)
-        return NzPreprocessed(cur.data,
-                              parameters=cur.parameters,
-                              history=history)
+            return NzImagePreprocessed(
+                cur.data, parameters=cur.parameters, history=history
+            )
+        return NzPreprocessed(
+            cur.data, parameters=cur.parameters, history=history
+        )
 
     def fit_transform(self, X: NzLoad) -> NzPreprocessed:
         # Fit the pipeline once on X, collecting fitted params;
@@ -85,7 +87,8 @@ class Pipeline:
         return self.transform(X)  # builds proper history and final container
 
 
-def build_pipeline(*, steps: Iterable[Transformer],
-                   expect: Optional[Type[NzLoad]] = None) -> Pipeline:
+def build_pipeline(
+    *, steps: Iterable[Transformer], expect: Optional[Type[NzLoad]] = None
+) -> Pipeline:
     """Public helper, inspired by sklearn.pipeline.Pipeline."""
     return Pipeline(steps=steps, expect=expect)

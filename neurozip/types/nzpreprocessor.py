@@ -13,18 +13,25 @@ class HistoryItem:
 
 class NzPreprocessed(NzLoad):
     """Generic post-preprocessing container."""
-    def __init__(self, data: np.ndarray, *,
-                 parameters: Optional[Parameters] = None,
-                 history: Optional[List[HistoryItem]] = None):
+
+    def __init__(
+        self,
+        data: np.ndarray,
+        *,
+        parameters: Optional[Parameters] = None,
+        history: Optional[List[HistoryItem]] = None,
+    ):
         super().__init__(data=data, parameters=parameters)
         self.history: List[HistoryItem] = history or []
 
 
 class NzImagePreprocessed(NzPreprocessed):
     """Preprocessed widefield/imaging data."""
+
     pass
 
 
 class NzEphysPreprocessed(NzPreprocessed):
     """Preprocessed Ephys/NP data."""
+
     pass
