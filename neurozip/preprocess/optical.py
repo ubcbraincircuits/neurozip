@@ -321,6 +321,52 @@ class Trim(_BaseTransformer):
         return self.transform(X)
 
 
+# ----------- Remove Artifacts ----------
+class RemoveArtifacts(_BaseTransformer):
+    """
+    Remove artifacts by linear interpolation around given time indices.
+    """
+    def __init__(self, *, indices: np.ndarray, pad: int = 2):
+        self.indices = np.asarray(indices, dtype=int)
+        if self.indices.ndim != 1:
+            raise ValueError("indices must be 1D array.")
+        self.pad = int(pad)
+        if self.pad < 0:
+            raise ValueError("pad must be non-negative.")
+
+    def fit(self, X: NzLoad) -> "RemoveArtifacts":
+        # nothing to learn; but validate
+        _ = _as_3d(X.data)
+        return self
+
+    def transform(self, X: NzLoad) -> NzLoad:
+        arr = _as_3d(X.data).astype(np.float64, copy=False)
+        T, H, W = arr.shape
+        for idx in self.indices:
+            start = max(0, idx - self.pad)
+            end = min(T - 1, idx + self.pad)
+            if start >= end:
+                continue  # nothing to interpolate
+            before_idx = start - 1
+            after_idx = end + 1
+            if before_idx < 0 or after_idx >= T:
+                continue  # cannot interpolate at edges
+            num_to_fill = end - start + 1
+            before_frame = arr[before_idx]
+            after_frame = arr[after_idx]
+            for i in range(num_to_fill):
+                alpha = (i + 1) / (num_to_fill + 1)
+                arr[start + i] = (
+                    (1 - alpha) * before_frame + alpha * after_frame
+                )
+        return type(X)(data=arr.astype(np.float32, copy=False),
+                       parameters=X.parameters)
+
+    def fit_transform(self, X: NzLoad) -> NzLoad:
+        self.fit(X)
+        return self.transform(X)
+
+
 # ----------- Temporal Filter ----------
 class TemporalFilter(_BaseTransformer):
     """

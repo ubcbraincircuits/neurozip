@@ -71,4 +71,3 @@ class NzImageLoad(NzLoad):
 class NzNPLoad(NzLoad):
     def __init__(self, data=None, parameters=None):
         super().__init__(data, parameters)
-        print("Hi NP")

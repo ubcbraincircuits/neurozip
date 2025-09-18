@@ -4,6 +4,7 @@ from .optical import (DFF,
                       Trim,
                       TemporalFilter,
                       SpatialFilter,
+                      RemoveArtifacts,
                       )  # Add more when necessary
 __all__ = ["DFF",
            "ZScore",
@@ -11,4 +12,5 @@ __all__ = ["DFF",
            "Trim",
            "TemporalFilter",
            "SpatialFilter",
+           "RemoveArtifacts",
            ]  # Add more when necessary
