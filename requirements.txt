@@ -1,0 +1,11 @@
+# Minimal requirements for neurozip core functionality
+numpy==2.2.6
+pillow==10.4.0
+scipy==1.14.1
+aspis==0.2.0
+
+# Optional: for type hints and development
+typing_extensions==4.12.2
+
+pandas==1.5.2
+matplotlib==3.6.0
