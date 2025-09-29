@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurozip"
-version = "0.1.0"
+version = "0.1.1"
 description = "Dimensionality Reduction for Brain Imaging Data"
 authors = [
   {name = "Daniel Ramandi", email="ramandi18@gmail.com"}
