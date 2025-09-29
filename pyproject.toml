@@ -12,7 +12,14 @@ authors = [
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "numpy>=1.26.0,<2.3",
+  "pillow==11.3.0",
+  "scipy==1.14.1",
+  "aspis==0.2.0",
+  "pandas==2.3.2",
+  "matplotlib==3.10.0",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
