@@ -18,17 +18,21 @@ from .nzpreprocessor import NzPreprocessed, NzImagePreprocessed, HistoryItem
 class Transformer(Protocol):
     """Minimal sklearn-like API."""
 
-    def fit(self, X: NzLoad) -> "Transformer": ...
+    def fit(self, X: NzLoad) -> "Transformer":
+        pass
 
-    def transform(self, X: NzLoad) -> NzLoad: ...
+    def transform(self, X: NzLoad) -> NzLoad:
+        pass
 
     def fit_transform(self, X: NzLoad) -> NzLoad:
         self.fit(X)
         return self.transform(X)
 
-    def get_params(self) -> Dict[str, Any]: ...
+    def get_params(self) -> Dict[str, Any]:
+        pass
 
-    def name(self) -> str: ...
+    def name(self) -> str:
+        pass
 
 
 class Pipeline:
